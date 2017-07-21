@@ -1,7 +1,13 @@
 # plus-one
-Team Plus-5: Esri Hackathon Project
+Esri Hackathon Project: Team Plus-5
 
 Initial commit of ArcGIS api widgets running on NodeJS server. Currently running Routing Service and GeoLocation Api Widgets.
-To setup: install Node JS and NPM, then run in cmd: npm install express
 
-To run: node app.js, then navigate to localhost:3000
+# Setup
+* Clone Repository
+* Install Node JS and NPM: https://nodejs.org/en/download/
+* open cmd, cd into cloned repo, run: npm install express
+
+# Run
+* in cmd, run: node app.js
+  * navigate to localhost:3000 in browser
