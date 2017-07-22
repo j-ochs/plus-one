@@ -36,6 +36,8 @@
       "esri/Graphic",
       "esri/layers/GraphicsLayer",
       "esri/tasks/RouteTask",
+      //"esri/tasks/ServiceAreaTask",
+      //"esri/tasks/ServiceAreaParameters",
       "esri/tasks/support/RouteParameters",
       "esri/tasks/support/FeatureSet",
       "esri/renderers/SimpleRenderer",
@@ -55,9 +57,9 @@
     ) {
 
         // Proxy the route requests to avoid prompt for log in
-        // urliUtils.addProxyRule({
+        // urlUtils.addProxyRule({
         //   urlPrefix: "route.arcgis.com",
-        //   proxyUrl: "/sproxy/"
+        //   proxyUrl: "https://utility.arcgis.com/usrsvcs/appservices/7cwib6Mw9eSLr17B/rest/services/World/Route/NAServer/Route_World/solve"
         // });
 
         // Point the URL to a valid route service
@@ -86,19 +88,34 @@
         });
 
         // Define the symbology used to display the route
-        var routeSymbol = new SimpleLineSymbol({
+        var routeSymbol1 = new SimpleLineSymbol({
           color: [0, 0, 255, 0.5],
           width: 5
         });
+        var routeSymbol2 = new SimpleLineSymbol({
+          color: [0,255,0,0.5],
+          width: 5
+        });
+        routeSymbols = {
+          "Route 1": new SimpleLineSymbol({
+            color: [0, 0, 255, 0.5],
+            width: 5
+          }),
+          "Route 2": new SimpleLineSymbol({
+            color: [0,255,0,0.5],
+            width: 5
+          })
+          //"Route 2": new SimpleLineSymbol().setColor(new Color([0,255,0,0.5])).setWidth(5)
+        };
 
         var map = new Map({
           basemap: "dark-gray",
-          layers: [routeLyr] // Add the route layer to the map
+          //layers: [routeLyr] // Add the route layer to the map
         });
         var view = new MapView({
           container: "viewDiv", // Reference to the scene div created in step 5
           map: map, // Reference to the map object created before the scene
-          //center: [-117.195, 34.057],
+          center: [-118.254296876423, 34.0504435331116],
           zoom: 14
         });
 
@@ -107,16 +124,16 @@
         var track = new Track({
           view: view
         });
+        var plotRoutePoints = false;
         view.ui.add(track, "top-left");
 
         // The sample will start tracking your location
         // once the view becomes ready
         view.then(function () {
-          track.start();
+          //track.start();  //UNCOMMENT THIS LINE TO START TRACKER
         });
 
-        // Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
-        on(view, "click", addStop);
+        
 
         function addStop(event) {
           // Add a point at the location of the map click
@@ -125,29 +142,61 @@
             symbol: stopSymbol
           });
           routeLyr.add(stop);
-          console.log('STOP', stop);
+          console.log('STOP', routeLyr);
 
           // Execute the route task if 2 or more stops are input
           routeParams.stops.features.push(stop);
-          if (routeParams.stops.features.length >= 2) {
+          if ((routeParams.stops.features.length >= 2) && plotRoutePoints) {
             routeTask.solve(routeParams).then(showRoute);
           }
         }
         // Adds the solved route to the map as a graphic
         function showRoute(data) {
           var routeResult = data.routeResults[0].route;
-          routeResult.symbol = routeSymbol;
+          routeResult.symbol = routeSymbol2;
           routeLyr.add(routeResult);
+        }
+        function plotPoints(bool) {
+          if (bool) {
+            plotRoutePoints = true;
+            on(view, "click", addStop);
+          }
+          else {
+            //on(view, "click");
+          }
         }
 
 
         /* Create Popup templates */
         var popupTemplate1 = {
-            title: "Testing..",
-            content: "<p><b> Name: {NAME} </b></p>" +
-               "<p> Address: {Address}</p>" +
+            title: "<p><b> Name: {NAME} </b></p>",
+            content: "<p> Address: {Address}</p>" +
               "<p> Latitude: {Latitude} </p>" +
               "<p> Longitude: {Longitude}</p>"
+        };
+        var popupTemplate2 = {
+            title: "<p><b> Name: {Name_new} </b></p>",
+            content: "<p> Address: {Address_1}</p>" +
+              "<p> Latitude: {POINT_X} </p>" +
+              "<p> Longitude: {POINT_Y}</p>"
+        };
+        var popupTemplate3 = {
+            title: "<p><b> Name: {Name} </b></p>",
+            content: "<p> Address: {Address}</p>" +
+              "<p> Latitude: {Latitude} </p>" +
+              "<p> Longitude: {Longitude}</p>"
+        };
+        var popupTemplate4 = {
+            title: "<p><b> Name: {LocationName} </b></p>",
+            content: "<p> Address: {Address}</p>" +
+              "<p> Latitude: {GeoLat} </p>" +
+              "<p> Longitude: {GeoLong}</p>"
+        };
+        var popupTemplate5 = {
+            title: "<p><b> Name: {Name} </b></p>",
+            content: "<p> Address: {ADDR1}</p>" +
+              "<p> Coordinates: No Coordinates for this data collection </p>" +
+              "<p> Website: {WEB}</p>"
         };
 
 
@@ -155,12 +204,6 @@
         /********************
          * Add feature layer
          ********************/
-        
-        // TESTING ADDING FEATURE LAYERS.
-        //var featureLayerTest = new FeatureLayer({
-        //  url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0"
-        //});
-        //map.add(featureLayer);
 
         // customizing marker symbols
         var renderer1 = new SimpleRenderer({
@@ -218,6 +261,7 @@
                 }
             })
         });
+
         // adding feature layers
         var featureLayer1 = new FeatureLayer({
             url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0",
@@ -225,44 +269,37 @@
             outFields: ["*"],
             popupTemplate: popupTemplate1
         });
-
         var featureLayer2 = new FeatureLayer({
             url: "http://services.arcgis.com/KxjeJypn9YBbyFQV/arcgis/rest/services/SoCalHosp/FeatureServer/0",
-            renderer:renderer2
+            renderer:renderer2,
+            outFields: ["*"],
+            popupTemplate: popupTemplate2
         });
-
         var featureLayer3 = new FeatureLayer({
             url: "http://services1.arcgis.com/AXaYBvnJsB5Q7sDF/arcgis/rest/services/Breweries_LA/FeatureServer/0",
-            renderer: renderer3
+            renderer: renderer3,
+            outFields: ["*"],
+            popupTemplate: popupTemplate3
         });
-
         var featureLayer4 = new FeatureLayer({
             url: "http://services.arcgis.com/dlFJXQQtlWFB4qUk/arcgis/rest/services/Parks_and_Rec/FeatureServer/0",
-            renderer: renderer4
+            renderer: renderer4,
+            outFields: ["*"],
+            popupTemplate: popupTemplate4
         });
-
         var featureLayer5 = new FeatureLayer({
             url: "http://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Farmers_Market/FeatureServer/0",
-            renderer: renderer5
+            renderer: renderer5,
+            outFields: ["*"],
+            popupTemplate: popupTemplate5
         });
 
-
-
-
-
-        
         var basemapGallery = new BasemapGallery({
           view: view
         });
         
 
-
-        
-
         //map.add(featureLayer2);
-        map.add(routeLyr);
-
-
         function addLayer(layer) {
           map.add(layer);
           console.log('LAYER', layer);
@@ -323,6 +360,17 @@
               removeLayer(featureLayer5);
             }
           }
+          document.getElementById("route").onclick = function fun() {
+            if (document.getElementById("route").checked) {
+              // Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
+              plotPoints(true);
+              map.add(routeLyr);
+            }
+            else { 
+              plotPoints(false);
+              map.remove(routeLyr);
+            }
+          }
           document.getElementById("basemaps").onclick = function fun() {
             if (document.getElementById("basemaps").checked) {
               showMaps();
@@ -340,16 +388,21 @@
 
 <body>
   <div id="viewDiv"></div>
-  <div id="paneDiv">
+  <div id="paneDiv" style="width:90%">
     <div>
-      <p><strong>Welcome to Plus-One</strong></p>
+      <p style="color:lightgreen"><strong>Welcome to Plus-One</strong></p><br>
+      Select route name: <select id="routeName">
+      <option value="Route 1">Route 1</option>
+      <option value="Route 2">Route 2</option>
+      </select>
       <input type="checkbox" id="checkbox1">Libraries</input>
       <input type="checkbox" id="checkbox2">Hospitals</input>
       <input type="checkbox" id="checkbox3">Breweries</input>
       <input type="checkbox" id="checkbox4">Parks &amp; Rec</input>
       <input type="checkbox" id="checkbox5">Farmers Markets</input>
-      <div style="float:right">
-        <input type="checkbox" id="basemaps">Change Basemaps</input>
+      <div style="float:right; display:block">
+        <input type="checkbox" id="route">Show Route</input>
+        <input type="checkbox" id="basemaps">Change Basemap</input>
       </div>
 
     </div>
