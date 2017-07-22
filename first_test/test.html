@@ -42,10 +42,11 @@
       "esri/Color",
       "esri/core/urlUtils",
       "dojo/on",
+      "esri/layers/FeatureLayer",
       "dojo/domReady!"
     ], function(
       Map, MapView, Track, Graphic, GraphicsLayer, RouteTask, RouteParameters,
-      FeatureSet, SimpleMarkerSymbol, SimpleLineSymbol, Color, urlUtils, on
+      FeatureSet, SimpleMarkerSymbol, SimpleLineSymbol, Color, urlUtils, on, FeatureLayer
     ) {
 
       // Proxy the route requests to avoid prompt for log in
@@ -132,6 +133,37 @@
         routeResult.symbol = routeSymbol;
         routeLyr.add(routeResult);
       }
+
+
+
+
+        /********************
+         * Add feature layer
+         ********************/
+
+        // Carbon storage of trees in Warren Wilson College.
+        var featureLayer = new FeatureLayer({
+          url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0"
+        });
+
+        map.add(featureLayer);
+
+
+
+      
+      var featureLayer2 = new FeatureLayer({
+          url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0"
+        });
+
+        map.add(featureLayer2);
+        map.add(routeLyr);
+
+         
+        // function addLayer() {
+        //   map.add(featureLayer);
+        //   map.add(featureLayer2);
+        // }
+
     });
   </script>
 </head>
@@ -142,6 +174,7 @@
       <p>Click on the map to add stops to the route. The route from the last stop to
         the newly added stop is calculated. If a stop is not reachable, it is removed
         and the last valid point is set as the starting point.</p>
+        <button class="button" onClick="addLayer()">Button</button>
     </div>
   </div>
 </body>
