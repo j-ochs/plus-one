@@ -11,3 +11,8 @@ Initial commit of ArcGIS api widgets running on NodeJS server. Currently running
 ### Run
 * in cmd, run: node app.js
   * navigate to localhost:3000 in browser
+
+### ArcGIS Online account
+account name: PlusFive
+password: hackathon2017
+* enables routing and geolcation services 
