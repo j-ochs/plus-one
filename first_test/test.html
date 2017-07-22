@@ -45,10 +45,13 @@
       "esri/core/urlUtils",
       "dojo/on",
       "esri/layers/FeatureLayer",
+      "esri/widgets/BasemapGallery",
+      "esri/tasks/Locator",
       "dojo/domReady!"
     ], function (
       Map, MapView, Track, Graphic, GraphicsLayer, RouteTask, RouteParameters,
-      FeatureSet, SimpleRenderer, SimpleMarkerSymbol, SimpleLineSymbol, Color, urlUtils, on, FeatureLayer
+      FeatureSet, SimpleRenderer, SimpleMarkerSymbol, SimpleLineSymbol, Color, urlUtils, on, FeatureLayer, BasemapGallery,
+      Locator
     ) {
 
         // Proxy the route requests to avoid prompt for log in
@@ -95,7 +98,7 @@
         var view = new MapView({
           container: "viewDiv", // Reference to the scene div created in step 5
           map: map, // Reference to the map object created before the scene
-          center: [-117.195, 34.057],
+          //center: [-117.195, 34.057],
           zoom: 14
         });
 
@@ -122,6 +125,7 @@
             symbol: stopSymbol
           });
           routeLyr.add(stop);
+          console.log('STOP', stop);
 
           // Execute the route task if 2 or more stops are input
           routeParams.stops.features.push(stop);
@@ -137,35 +141,121 @@
         }
 
 
+        /* Create Popup templates */
+        var popupTemplate1 = {
+            title: "Testing..",
+            content: "<p><b> Name: {NAME} </b></p>" +
+               "<p> Address: {Address}</p>" +
+              "<p> Latitude: {Latitude} </p>" +
+              "<p> Longitude: {Longitude}</p>"
+        };
+
+
+
         /********************
          * Add feature layer
          ********************/
-
-        // Carbon storage of trees in Warren Wilson College.
-        var featureLayerTest = new FeatureLayer({
-          url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0"
-        });
+        
+        // TESTING ADDING FEATURE LAYERS.
+        //var featureLayerTest = new FeatureLayer({
+        //  url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0"
+        //});
         //map.add(featureLayer);
 
+        // customizing marker symbols
+        var renderer1 = new SimpleRenderer({
+            symbol: new SimpleMarkerSymbol({
+                size: 6,
+                color: "white",
+                style: "x",
+                outline: {
+                    width: 0.8,
+                    color: "white"
+                }
+            })
+        });
+        var renderer2 = new SimpleRenderer({
+            symbol: new SimpleMarkerSymbol({
+                size: 7,
+                color: "red",
+                style: "cross",
+                outline: {
+                    width: 0.8,
+                    color: "red"
+                }
+            })
+        });
+        var renderer3 = new SimpleRenderer({
+            symbol: new SimpleMarkerSymbol({
+                size: 6,
+                color: "brown",
+                style: "circle",
+                outline: {
+                    width: 0.8,
+                    color: "white"
+                }
+            })
+        });
+        var renderer4 = new SimpleRenderer({
+            symbol: new SimpleMarkerSymbol({
+                size: 6,
+                color: "green",
+                style: "square",
+                outline: {
+                    width: 0.8,
+                    color: "white"
+                }
+            })
+        });
+        var renderer5 = new SimpleRenderer({
+            symbol: new SimpleMarkerSymbol({
+                size: 6,
+                color: "dodgerblue",
+                style: "diamond",
+                outline: {
+                    width: 0.8,
+                    color: "white"
+                }
+            })
+        });
+        // adding feature layers
         var featureLayer1 = new FeatureLayer({
-          url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0"
+            url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0",
+            renderer: renderer1,
+            outFields: ["*"],
+            popupTemplate: popupTemplate1
         });
 
         var featureLayer2 = new FeatureLayer({
-          url: "http://services.arcgis.com/KxjeJypn9YBbyFQV/arcgis/rest/services/SoCalHosp/FeatureServer/0"
+            url: "http://services.arcgis.com/KxjeJypn9YBbyFQV/arcgis/rest/services/SoCalHosp/FeatureServer/0",
+            renderer:renderer2
         });
 
         var featureLayer3 = new FeatureLayer({
-          url: "http://services1.arcgis.com/AXaYBvnJsB5Q7sDF/arcgis/rest/services/Breweries_LA/FeatureServer/0"
+            url: "http://services1.arcgis.com/AXaYBvnJsB5Q7sDF/arcgis/rest/services/Breweries_LA/FeatureServer/0",
+            renderer: renderer3
         });
 
         var featureLayer4 = new FeatureLayer({
-          url: "http://services.arcgis.com/dlFJXQQtlWFB4qUk/arcgis/rest/services/Parks_and_Rec/FeatureServer/0"
+            url: "http://services.arcgis.com/dlFJXQQtlWFB4qUk/arcgis/rest/services/Parks_and_Rec/FeatureServer/0",
+            renderer: renderer4
         });
 
         var featureLayer5 = new FeatureLayer({
-          url: "http://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Farmers_Market/FeatureServer/0"
+            url: "http://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Farmers_Market/FeatureServer/0",
+            renderer: renderer5
         });
+
+
+
+
+
+        
+        var basemapGallery = new BasemapGallery({
+          view: view
+        });
+        
+
 
         
 
@@ -175,9 +265,20 @@
 
         function addLayer(layer) {
           map.add(layer);
+          console.log('LAYER', layer);
         }
         function removeLayer(layer) {
           map.remove(layer);
+        }
+
+        // Add the widget to the top-right corner of the view
+        function showMaps() {
+          view.ui.add(basemapGallery, {
+            position: "bottom-right"
+          });
+        }
+        function removeMaps() {
+          view.ui.remove(basemapGallery);
         }
 
 
@@ -189,7 +290,6 @@
             else { 
               removeLayer(featureLayer1);
             }
-            //validation code to see State field is mandatory.  
           }
           document.getElementById("checkbox2").onclick = function fun() {
             if (document.getElementById("checkbox2").checked) {
@@ -198,7 +298,6 @@
             else { 
               removeLayer(featureLayer2);
             }
-            //validation code to see State field is mandatory.  
           }
           document.getElementById("checkbox3").onclick = function fun() {
             if (document.getElementById("checkbox3").checked) {
@@ -207,7 +306,6 @@
             else { 
               removeLayer(featureLayer3);
             }
-            //validation code to see State field is mandatory.  
           }
           document.getElementById("checkbox4").onclick = function fun() {
             if (document.getElementById("checkbox4").checked) {
@@ -216,7 +314,6 @@
             else { 
               removeLayer(featureLayer4);
             }
-            //validation code to see State field is mandatory.  
           }
           document.getElementById("checkbox5").onclick = function fun() {
             if (document.getElementById("checkbox5").checked) {
@@ -225,7 +322,14 @@
             else { 
               removeLayer(featureLayer5);
             }
-            //validation code to see State field is mandatory.  
+          }
+          document.getElementById("basemaps").onclick = function fun() {
+            if (document.getElementById("basemaps").checked) {
+              showMaps();
+            }
+            else { 
+              removeMaps();
+            }
           }
         }
 
@@ -238,13 +342,15 @@
   <div id="viewDiv"></div>
   <div id="paneDiv">
     <div>
-      <p>Click on the map to add stops to the route. The route from the last stop to the newly added stop is calculated. If
-        a stop is not reachable, it is removed and the last valid point is set as the starting point.</p>
+      <p><strong>Welcome to Plus-One</strong></p>
       <input type="checkbox" id="checkbox1">Libraries</input>
       <input type="checkbox" id="checkbox2">Hospitals</input>
       <input type="checkbox" id="checkbox3">Breweries</input>
-      <input type="checkbox" id="checkbox4">Parks &amps; Rec</input>
+      <input type="checkbox" id="checkbox4">Parks &amp; Rec</input>
       <input type="checkbox" id="checkbox5">Farmers Markets</input>
+      <div style="float:right">
+        <input type="checkbox" id="basemaps">Change Basemaps</input>
+      </div>
 
     </div>
   </div>
