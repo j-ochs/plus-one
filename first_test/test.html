@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -37,6 +38,7 @@
       "esri/tasks/RouteTask",
       "esri/tasks/support/RouteParameters",
       "esri/tasks/support/FeatureSet",
+      "esri/renderers/SimpleRenderer",
       "esri/symbols/SimpleMarkerSymbol",
       "esri/symbols/SimpleLineSymbol",
       "esri/Color",
@@ -44,97 +46,95 @@
       "dojo/on",
       "esri/layers/FeatureLayer",
       "dojo/domReady!"
-    ], function(
+    ], function (
       Map, MapView, Track, Graphic, GraphicsLayer, RouteTask, RouteParameters,
-      FeatureSet, SimpleMarkerSymbol, SimpleLineSymbol, Color, urlUtils, on, FeatureLayer
+      FeatureSet, SimpleRenderer, SimpleMarkerSymbol, SimpleLineSymbol, Color, urlUtils, on, FeatureLayer
     ) {
 
-      // Proxy the route requests to avoid prompt for log in
-      // urliUtils.addProxyRule({
-      //   urlPrefix: "route.arcgis.com",
-      //   proxyUrl: "/sproxy/"
-      // });
+        // Proxy the route requests to avoid prompt for log in
+        // urliUtils.addProxyRule({
+        //   urlPrefix: "route.arcgis.com",
+        //   proxyUrl: "/sproxy/"
+        // });
 
-      // Point the URL to a valid route service
-      var routeTask = new RouteTask({
-        url: "https://route.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World"
-      });
-
-      // The stops and route result will be stored in this layer
-      var routeLyr = new GraphicsLayer();
-
-      // Setup the route parameters
-      var routeParams = new RouteParameters({
-        stops: new FeatureSet(),
-        outSpatialReference: { // autocasts as new SpatialReference()
-          wkid: 3857
-        }
-      });
-
-      // Define the symbology used to display the stops
-      var stopSymbol = new SimpleMarkerSymbol({
-        style: "cross",
-        size: 10,
-        outline: { // autocasts as new SimpleLineSymbol()
-          width: 4
-        }
-      });
-
-      // Define the symbology used to display the route
-      var routeSymbol = new SimpleLineSymbol({
-        color: [0, 0, 255, 0.5],
-        width: 5
-      });
-
-      var map = new Map({
-        basemap: "streets",
-        layers: [routeLyr] // Add the route layer to the map
-      });
-      var view = new MapView({
-        container: "viewDiv", // Reference to the scene div created in step 5
-        map: map, // Reference to the map object created before the scene
-        center: [-117.195, 34.057],
-        zoom: 14
-      });
-
-      // Create an instance of the Track widget
-      // and add it to the view's UI
-      var track = new Track({
-        view: view
-      });
-      view.ui.add(track, "top-left");
-
-      // The sample will start tracking your location
-      // once the view becomes ready
-      view.then(function() {
-        track.start();
-      });
-
-      // Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
-      on(view, "click", addStop);
-
-      function addStop(event) {
-        // Add a point at the location of the map click
-        var stop = new Graphic({
-          geometry: event.mapPoint,
-          symbol: stopSymbol
+        // Point the URL to a valid route service
+        var routeTask = new RouteTask({
+          url: "https://route.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World"
         });
-        routeLyr.add(stop);
 
-        // Execute the route task if 2 or more stops are input
-        routeParams.stops.features.push(stop);
-        if (routeParams.stops.features.length >= 2) {
-          routeTask.solve(routeParams).then(showRoute);
+        // The stops and route result will be stored in this layer
+        var routeLyr = new GraphicsLayer();
+
+        // Setup the route parameters
+        var routeParams = new RouteParameters({
+          stops: new FeatureSet(),
+          outSpatialReference: { // autocasts as new SpatialReference()
+            wkid: 3857
+          }
+        });
+
+        // Define the symbology used to display the stops
+        var stopSymbol = new SimpleMarkerSymbol({
+          style: "cross",
+          size: 10,
+          outline: { // autocasts as new SimpleLineSymbol()
+            width: 4
+          }
+        });
+
+        // Define the symbology used to display the route
+        var routeSymbol = new SimpleLineSymbol({
+          color: [0, 0, 255, 0.5],
+          width: 5
+        });
+
+        var map = new Map({
+          basemap: "dark-gray",
+          layers: [routeLyr] // Add the route layer to the map
+        });
+        var view = new MapView({
+          container: "viewDiv", // Reference to the scene div created in step 5
+          map: map, // Reference to the map object created before the scene
+          center: [-117.195, 34.057],
+          zoom: 14
+        });
+
+        // Create an instance of the Track widget
+        // and add it to the view's UI
+        var track = new Track({
+          view: view
+        });
+        view.ui.add(track, "top-left");
+
+        // The sample will start tracking your location
+        // once the view becomes ready
+        view.then(function () {
+          track.start();
+        });
+
+        // Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
+        on(view, "click", addStop);
+
+        function addStop(event) {
+          // Add a point at the location of the map click
+          var stop = new Graphic({
+            geometry: event.mapPoint,
+            symbol: stopSymbol
+          });
+          routeLyr.add(stop);
+
+          // Execute the route task if 2 or more stops are input
+          routeParams.stops.features.push(stop);
+          if (routeParams.stops.features.length >= 2) {
+            routeTask.solve(routeParams).then(showRoute);
+          }
         }
-      }
-      // Adds the solved route to the map as a graphic
-      function showRoute(data) {
-        var routeResult = data.routeResults[0].route;
-        routeResult.symbol = routeSymbol;
-        routeLyr.add(routeResult);
-      }
-
-
+        // Adds the solved route to the map as a graphic
+        function showRoute(data) {
+          var routeResult = data.routeResults[0].route;
+          routeResult.symbol = routeSymbol;
+          routeLyr.add(routeResult);
+        }
 
 
         /********************
@@ -142,75 +142,113 @@
          ********************/
 
         // Carbon storage of trees in Warren Wilson College.
-        var featureLayer = new FeatureLayer({
+        var featureLayerTest = new FeatureLayer({
           url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0"
         });
+        //map.add(featureLayer);
 
-        map.add(featureLayer);
-
-
-
-      
-      var featureLayer2 = new FeatureLayer({
+        var featureLayer1 = new FeatureLayer({
           url: "http://services1.arcgis.com/p84PN4WZvOWzi2j2/arcgis/rest/services/Libraries/FeatureServer/0"
         });
 
-        map.add(featureLayer2);
+        var featureLayer2 = new FeatureLayer({
+          url: "http://services.arcgis.com/KxjeJypn9YBbyFQV/arcgis/rest/services/SoCalHosp/FeatureServer/0"
+        });
+
+        var featureLayer3 = new FeatureLayer({
+          url: "http://services1.arcgis.com/AXaYBvnJsB5Q7sDF/arcgis/rest/services/Breweries_LA/FeatureServer/0"
+        });
+
+        var featureLayer4 = new FeatureLayer({
+          url: "http://services.arcgis.com/dlFJXQQtlWFB4qUk/arcgis/rest/services/Parks_and_Rec/FeatureServer/0"
+        });
+
+        var featureLayer5 = new FeatureLayer({
+          url: "http://services.arcgis.com/RmCCgQtiZLDCtblq/arcgis/rest/services/Farmers_Market/FeatureServer/0"
+        });
+
+        
+
+        //map.add(featureLayer2);
         map.add(routeLyr);
 
-         
-        // function addLayer() {
-        //   map.add(featureLayer);
-        //   map.add(featureLayer2);
-        // }
 
-    });
+        function addLayer(layer) {
+          map.add(layer);
+        }
+        function removeLayer(layer) {
+          map.remove(layer);
+        }
+
+
+        window.onload = function () {
+          document.getElementById("checkbox1").onclick = function fun() {
+            if (document.getElementById("checkbox1").checked) {
+              addLayer(featureLayer1);
+            }
+            else { 
+              removeLayer(featureLayer1);
+            }
+            //validation code to see State field is mandatory.  
+          }
+          document.getElementById("checkbox2").onclick = function fun() {
+            if (document.getElementById("checkbox2").checked) {
+              addLayer(featureLayer2);
+            }
+            else { 
+              removeLayer(featureLayer2);
+            }
+            //validation code to see State field is mandatory.  
+          }
+          document.getElementById("checkbox3").onclick = function fun() {
+            if (document.getElementById("checkbox3").checked) {
+              addLayer(featureLayer3);
+            }
+            else { 
+              removeLayer(featureLayer3);
+            }
+            //validation code to see State field is mandatory.  
+          }
+          document.getElementById("checkbox4").onclick = function fun() {
+            if (document.getElementById("checkbox4").checked) {
+              addLayer(featureLayer4);
+            }
+            else { 
+              removeLayer(featureLayer4);
+            }
+            //validation code to see State field is mandatory.  
+          }
+          document.getElementById("checkbox5").onclick = function fun() {
+            if (document.getElementById("checkbox5").checked) {
+              addLayer(featureLayer5);
+            }
+            else { 
+              removeLayer(featureLayer5);
+            }
+            //validation code to see State field is mandatory.  
+          }
+        }
+
+
+      });
   </script>
 </head>
+
 <body>
   <div id="viewDiv"></div>
   <div id="paneDiv">
     <div>
-      <p>Click on the map to add stops to the route. The route from the last stop to
-        the newly added stop is calculated. If a stop is not reachable, it is removed
-        and the last valid point is set as the starting point.</p>
-        <button class="button" onClick="addLayer()">Button</button>
+      <p>Click on the map to add stops to the route. The route from the last stop to the newly added stop is calculated. If
+        a stop is not reachable, it is removed and the last valid point is set as the starting point.</p>
+      <input type="checkbox" id="checkbox1">Libraries</input>
+      <input type="checkbox" id="checkbox2">Hospitals</input>
+      <input type="checkbox" id="checkbox3">Breweries</input>
+      <input type="checkbox" id="checkbox4">Parks &amps; Rec</input>
+      <input type="checkbox" id="checkbox5">Farmers Markets</input>
+
     </div>
   </div>
 </body>
+
 </html>
 
-
-<!--<script>
-    require([
-      "esri/widgets/Track",
-      "esri/views/MapView",
-      "esri/Map",
-      "dojo/domReady!"
-    ], function(
-      Track, MapView, Map
-    ) {
-
-      var map = new Map({
-        basemap: "topo"
-      });
-
-      var view = new MapView({
-        map: map,
-        container: "viewDiv"
-      });
-
-      // Create an instance of the Track widget
-      // and add it to the view's UI
-      var track = new Track({
-        view: view
-      });
-      view.ui.add(track, "top-left");
-
-      // The sample will start tracking your location
-      // once the view becomes ready
-      view.then(function() {
-        track.start();
-      });
-    });
-  </script>-->
