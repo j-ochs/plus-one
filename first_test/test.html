@@ -27,6 +27,7 @@
 
   <link rel="stylesheet" href="https://js.arcgis.com/4.4/esri/css/main.css">
   <script src="https://js.arcgis.com/4.4/"></script>
+  <link rel="stylesheet" href="https://s3-us-west-1.amazonaws.com/patterns.esri.com/files/calcite-web/1.0.0-rc.7/css/calcite-web.min.css">
 
   <script>
     require([
@@ -72,7 +73,12 @@
 
         // The stops and route result will be stored in this layer
         var routeLyr = new GraphicsLayer();
+        var routeLyr2 = new GraphicsLayer();
         var libraryLyr = new GraphicsLayer();
+        var hospitalLyr = new GraphicsLayer();
+        var breweryLyr = new GraphicsLayer();
+        var parksLyr = new GraphicsLayer();
+        var farmersMktsLyr = new GraphicsLayer();
         //map.add(libraryLyr);
 
         // Setup the route parameters
@@ -82,7 +88,12 @@
             wkid: 3857
           }
         });
-
+       var routeParams2 = new RouteParameters({
+          stops: new FeatureSet(),
+          outSpatialReference: { // autocasts as new SpatialReference()
+            wkid: 3857
+          }
+        });
         // Define the symbology used to display the stops
         var stopSymbol = new SimpleMarkerSymbol({
           style: "cross",
@@ -94,24 +105,24 @@
 
         // Define the symbology used to display the route
         var routeSymbol1 = new SimpleLineSymbol({
-          color: [0, 0, 255, 0.5],
+          color: "red",
           width: 5
         });
         var routeSymbol2 = new SimpleLineSymbol({
-          color: [0, 255, 0, 0.5],
+          color: "blue",
           width: 5
         });
-        routeSymbols = {
-          "Route 1": new SimpleLineSymbol({
-            color: [0, 0, 255, 0.5],
-            width: 5
-          }),
-          "Route 2": new SimpleLineSymbol({
-            color: [0, 255, 0, 0.5],
-            width: 5
-          })
-          //"Route 2": new SimpleLineSymbol().setColor(new Color([0,255,0,0.5])).setWidth(5)
-        };
+        // routeSymbols = {
+        //   "Route 1": new SimpleLineSymbol({
+        //     color: [0, 0, 255, 0.5],
+        //     width: 5
+        //   }),
+        //   "Route 2": new SimpleLineSymbol({
+        //     color: [0, 255, 0, 0.5],
+        //     width: 5
+        //   })
+        //   //"Route 2": new SimpleLineSymbol().setColor(new Color([0,255,0,0.5])).setWidth(5)
+        // };
 
         var map = new Map({
           basemap: "dark-gray",
@@ -139,33 +150,58 @@
         });
 
         var myStops = [];
+        var myStops2 = [];
+        
         function addStop(event) {
           // Add a point at the location of the map click
           var stop = new Graphic({
             geometry: event.mapPoint,
-            symbol: stopSymbol
+            symbol: stopSymbol,
+            routeName: document.getElementById('routeName').value
           });
-          routeLyr.add(stop);
+          stop.routeName == "Route 1"? routeLyr.add(stop): routeLyr2.add(stop);
+          //routeLyr.add(stop);
 
 
           // Execute the route task if 2 or more stops are input
-          routeParams.stops.features.push(stop);
+          stop.routeName == "Route 1" ? routeParams.stops.features.push(stop) : routeParams2.stops.features.push(stop);
+          //routeParams.stops.features.push(stop);
           if ((routeParams.stops.features.length >= 2) && plotRoutePoints) {
-            routeTask.solve(routeParams).then(showRoute);
+
+            routeTask.solve(routeParams).then(function(data) {
+                showRoute(data, "Route 1")
+            });
           }
-          myStops = routeParams.stops.features;
+          if ((routeParams2.stops.features.length >= 2) && plotRoutePoints) {
+
+            routeTask.solve(routeParams2).then(function(data) {
+                showRoute(data, "Route 2")
+            });
+          }
+          myStops = routeParams.stops.features.concat(routeParams2.stops.features);
+          //myStops2 = routeParams2.stops.features;
+          
           console.log('STOPs', myStops);
         }
 
         // Adds the solved route to the map as a graphic
-        function showRoute(data) {
+        function showRoute(data, routeName) {
           var routeResult = data.routeResults[0].route;
-          routeResult.symbol = routeSymbol2;
-          routeLyr.add(routeResult);
+          console.log('routeResult', data);
+         // routeResult.symbol = routeSymbol1;
+         console.log('rl', routeName);
+          if (routeName == 'Route 1'){
+            routeResult.symbol = routeSymbol1;
+            routeLyr.add(routeResult);
+          }
+           if (routeName == 'Route 2') {
+            routeResult.symbol = routeSymbol2;
+            routeLyr2.add(routeResult);
+          }
         }
         function removeRoute(data) {
           var routeResult = data.routeResults[0].route;
-          routeResult.symbol = routeSymbol2;
+          //routeResult.symbol = routeSymbol2;
           routeLyr.remove(routeResult);
         }
         function plotPoints(bool) {
@@ -335,9 +371,13 @@
 
         window.onload = function () {
           document.getElementById("checkbox1").onclick = function fun() {
+            if (myStops.length == 0 || myStops2.length) {
+              libraryLyr.removeAll();
+            }
             if (document.getElementById("checkbox1").checked) {
 
               var query = new Query();
+              
               for (var s = 0; s < myStops.length; s++) {
                 //query.where = "Latitude <" + myStops[0].geometry.latitude + "AND Longitude <" + myStops[0].geometry.longitude;
                 query.where = "Latitude <" + (myStops[s].geometry.latitude + 5 / 68.92).toString() + "AND Latitude >" + (myStops[s].geometry.latitude - 5 / 68.92).toString() + "AND Longitude <" + (myStops[s].geometry.longitude + 5 / 57.4).toString() + "AND Longitude >" + (myStops[s].geometry.longitude - 5 / 57.4).toString()
@@ -353,13 +393,14 @@
                     var prevResults = results.features[i];
                     libraryLyr.add(prevResults);
                     libraryLyr.add(results.features[i]);
-                    
+
                   }
 
                   console.log("prev: ", i, prevResults)
-                  
+
                 });
               }
+              
               map.add(libraryLyr);
             }
             else {
@@ -368,6 +409,11 @@
           }
           document.getElementById("checkbox2").onclick = function fun() {
             if (document.getElementById("checkbox2").checked) {
+
+
+
+
+
               addLayer(featureLayer2);
             }
             else {
@@ -376,23 +422,115 @@
           }
           document.getElementById("checkbox3").onclick = function fun() {
             if (document.getElementById("checkbox3").checked) {
-              addLayer(featureLayer3);
+              //addLayer(featureLayer3);
+
+
+              var query = new Query();
+              for (var s = 0; s < myStops.length; s++) {
+                //query.where = "Latitude <" + myStops[0].geometry.latitude + "AND Longitude <" + myStops[0].geometry.longitude;
+                query.where = "Latitude <" + (myStops[s].geometry.latitude + 5 / 68.92).toString() + "AND Latitude >" + (myStops[s].geometry.latitude - 5 / 68.92).toString() + "AND Longitude <" + (myStops[s].geometry.longitude + 5 / 57.4).toString() + "AND Longitude >" + (myStops[s].geometry.longitude - 5 / 57.4).toString()
+
+                query.returnGeometry = true;
+                query.outFields = ["Name", "Latitude", "Longitude"];
+
+                featureLayer3.queryFeatures(query).then(function (results) {
+
+                  for (var i = 0; i < results.features.length; i++) {
+                    console.log("RES ", i, results.features[i]);  // prints the array of features to the console
+                    results.features[i].symbol = renderer3.symbol;
+                    var prevResults = results.features[i];
+                    breweryLyr.add(prevResults);
+                    breweryLyr.add(results.features[i]);
+
+                  }
+
+                  console.log("prev: ", i, prevResults)
+
+                });
+              }
+              map.add(breweryLyr);
+
+
+
             }
             else {
-              removeLayer(featureLayer3);
+              map.remove(breweryLyr);
             }
           }
           document.getElementById("checkbox4").onclick = function fun() {
             if (document.getElementById("checkbox4").checked) {
-              addLayer(featureLayer4);
+              if (myStops.length > 0) {
+                //addLayer(featureLayer4);
+
+
+
+
+                var query = new Query();
+                for (var s = 0; s < myStops.length; s++) {
+                  //query.where = "Latitude <" + myStops[0].geometry.latitude + "AND Longitude <" + myStops[0].geometry.longitude;
+                  query.where = "GeoLat <" + (myStops[s].geometry.latitude + 5 / 68.92).toString() + "AND GeoLat >" + (myStops[s].geometry.latitude - 5 / 68.92).toString() + "AND GeoLong <" + (myStops[s].geometry.longitude + 5 / 57.4).toString() + "AND GeoLong >" + (myStops[s].geometry.longitude - 5 / 57.4).toString()
+
+                  query.returnGeometry = true;
+                  query.outFields = ["LocationName", "GeoLat", "GeoLong"];
+
+                  featureLayer4.queryFeatures(query).then(function (results) {
+
+                    for (var i = 0; i < results.features.length; i++) {
+                      console.log("RES ", i, results.features[i]);  // prints the array of features to the console
+                      results.features[i].symbol = renderer4.symbol;
+                      var prevResults = results.features[i];
+                      parksLyr.add(prevResults);
+                      parksLyr.add(results.features[i]);
+
+                    }
+
+                    console.log("prev: ", i, prevResults)
+
+                  });
+                }
+                map.add(parksLyr);
+              }
             }
             else {
-              removeLayer(featureLayer4);
+              //parksLyr = new GraphicsLayer();
+              map.remove(parksLyr);
             }
           }
           document.getElementById("checkbox5").onclick = function fun() {
             if (document.getElementById("checkbox5").checked) {
               addLayer(featureLayer5);
+
+              if (myStops.length > 0) {
+                //addLayer(featureLayer4);
+
+
+
+
+                var query = new Query();
+                for (var s = 0; s < myStops.length; s++) {
+                  //query.where = "Latitude <" + myStops[0].geometry.latitude + "AND Longitude <" + myStops[0].geometry.longitude;
+                  query.where = "GeoLat <" + (myStops[s].geometry.latitude + 5 / 68.92).toString() + "AND GeoLat >" + (myStops[s].geometry.latitude - 5 / 68.92).toString() + "AND GeoLong <" + (myStops[s].geometry.longitude + 5 / 57.4).toString() + "AND GeoLong >" + (myStops[s].geometry.longitude - 5 / 57.4).toString()
+
+                  query.returnGeometry = true;
+                  query.outFields = ["LocationName", "GeoLat", "GeoLong"];
+
+                  featureLayer4.queryFeatures(query).then(function (results) {
+
+                    for (var i = 0; i < results.features.length; i++) {
+                      console.log("RES ", i, results.features[i]);  // prints the array of features to the console
+                      results.features[i].symbol = renderer4.symbol;
+                      var prevResults = results.features[i];
+                      parksLyr.add(prevResults);
+                      parksLyr.add(results.features[i]);
+
+                    }
+
+                    console.log("prev: ", i, prevResults)
+
+                  });
+                }
+                map.add(parksLyr);
+              }
             }
             else {
               removeLayer(featureLayer5);
@@ -403,16 +541,19 @@
               // Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
               plotPoints(true);
               map.add(routeLyr);
+              map.add(routeLyr2);
             }
             else {
               plotPoints(false);
               map.remove(routeLyr);
+              map.remove(routeLyr2);
             }
           }
           document.getElementById("clearRoute").onclick = function fun() {
             routeLyr.removeAll();
+            routeLyr2.removeAll();
             routeParams.stops.features = [];
-            //myStops = [];
+            myStops.length = 0;
             //libraryLyr = {};
 
             //removeRoute();
@@ -437,21 +578,28 @@
   <div id="viewDiv"></div>
   <div id="paneDiv" style="width:90%">
     <div>
-      <p style="color:lightgreen"><strong>Welcome to Plus-One</strong></p><br> Select route: <select id="routeName">
-      <option value="Route 1">Route 1</option>
-      <option value="Route 2">Route 2</option>
-      </select>
-      <input type="checkbox" id="checkbox1">Libraries</input>
-      <input type="checkbox" id="checkbox2">Hospitals</input>
-      <input type="checkbox" id="checkbox3">Breweries</input>
-      <input type="checkbox" id="checkbox4">Parks &amp; Rec</input>
-      <input type="checkbox" id="checkbox5">Farmers Markets</input>
-      <div style="float:right; display:block">
-        <input type="checkbox" id="showRoute">Show Route</input>
-        <button type="button" id="clearRoute">Clear Route</button>
-        <input type="checkbox" id="basemaps">Change Basemap</input>
+      <h3 style="color:blue">Welcome to Plus-One</h3>
+      <div class="grid-container">
+        <div class="column-9">
+          <input type="checkbox" id="checkbox1">Libraries</input><br>
+          <input type="checkbox" id="checkbox2">Hospitals</input><br>
+          <input type="checkbox" id="checkbox3">Breweries</input><br>
+          <input type="checkbox" id="checkbox4">Parks &amp; Rec</input><br>
+          <input type="checkbox" id="checkbox5">Farmers Markets</input><br>
+        </div>
+      
+      <div class="column-12">
+        <div style="float:right">
+          <input type="checkbox" id="basemaps">Change Basemap</input><br>
+          <input type="checkbox" id="showRoute">Show Route</input><br>
+          <select id="routeName" class="trailer-1">
+            <option value="Route 1">Route 1</option>
+            <option value="Route 2">Route 2</option>
+        </select>    
+        <button type="button" class="btn btn-clear" id="clearRoute">Clear Route</button>
+        </div>
       </div>
-
+    </div>
     </div>
   </div>
 </body>
