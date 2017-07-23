@@ -63,7 +63,7 @@
         // Proxy the route requests to avoid prompt for log in
         // urlUtils.addProxyRule({
         //   urlPrefix: "route.arcgis.com",
-        //   proxyUrl: "https://utility.arcgis.com/usrsvcs/appservices/7cwib6Mw9eSLr17B/rest/services/World/Route/NAServer/Route_World/solve"
+        //   proxyUrl: "https://utility.arcgis.com/usrsvcs/appservices/UIn0MB5aiLyEfdJy/rest/services/World/Route/NAServer/Route_World/solve"
         // });
 
         // Point the URL to a valid route service
@@ -105,7 +105,7 @@
 
         // Define the symbology used to display the route
         var routeSymbol1 = new SimpleLineSymbol({
-          color: "red",
+          color: "lightgreen",
           width: 5
         });
         var routeSymbol2 = new SimpleLineSymbol({
@@ -377,10 +377,11 @@
             if (document.getElementById("checkbox1").checked) {
 
               var query = new Query();
+              var dist = document.getElementById("distance").value;
               
               for (var s = 0; s < myStops.length; s++) {
                 //query.where = "Latitude <" + myStops[0].geometry.latitude + "AND Longitude <" + myStops[0].geometry.longitude;
-                query.where = "Latitude <" + (myStops[s].geometry.latitude + 5 / 68.92).toString() + "AND Latitude >" + (myStops[s].geometry.latitude - 5 / 68.92).toString() + "AND Longitude <" + (myStops[s].geometry.longitude + 5 / 57.4).toString() + "AND Longitude >" + (myStops[s].geometry.longitude - 5 / 57.4).toString()
+                query.where = "Latitude <" + (myStops[s].geometry.latitude + (dist * 1 / 68.92)).toString() + "AND Latitude >" + (myStops[s].geometry.latitude - (dist * 1 / 68.92)).toString() + "AND Longitude <" + (myStops[s].geometry.longitude + dist * (1 / 57.4)).toString() + "AND Longitude >" + (myStops[s].geometry.longitude - (dist * 1 / 57.4)).toString()
 
                 query.returnGeometry = true;
                 query.outFields = ["NAME", "Latitude", "Longitude"];
@@ -466,9 +467,10 @@
 
 
                 var query = new Query();
+                var dist = document.getElementById("distance").value;
                 for (var s = 0; s < myStops.length; s++) {
                   //query.where = "Latitude <" + myStops[0].geometry.latitude + "AND Longitude <" + myStops[0].geometry.longitude;
-                  query.where = "GeoLat <" + (myStops[s].geometry.latitude + 5 / 68.92).toString() + "AND GeoLat >" + (myStops[s].geometry.latitude - 5 / 68.92).toString() + "AND GeoLong <" + (myStops[s].geometry.longitude + 5 / 57.4).toString() + "AND GeoLong >" + (myStops[s].geometry.longitude - 5 / 57.4).toString()
+                  query.where = "GeoLat <" + (myStops[s].geometry.latitude + (dist * 1 / 68.92)).toString() + "AND GeoLat >" + (myStops[s].geometry.latitude - (dist * 1 / 68.92)).toString() + "AND GeoLong <" + (myStops[s].geometry.longitude + (dist * 1 / 57.4)).toString() + "AND GeoLong >" + (myStops[s].geometry.longitude - (dist * 1 / 57.4)).toString()
 
                   query.returnGeometry = true;
                   query.outFields = ["LocationName", "GeoLat", "GeoLong"];
@@ -578,25 +580,34 @@
   <div id="viewDiv"></div>
   <div id="paneDiv" style="width:90%">
     <div>
-      <h3 style="color:blue">Welcome to Plus-One</h3>
+      <h3 style="color:lightgreen">Welcome to Plus-One</h3>
       <div class="grid-container">
-        <div class="column-9">
+        <div class="column-5">
           <input type="checkbox" id="checkbox1">Libraries</input><br>
           <input type="checkbox" id="checkbox2">Hospitals</input><br>
           <input type="checkbox" id="checkbox3">Breweries</input><br>
           <input type="checkbox" id="checkbox4">Parks &amp; Rec</input><br>
           <input type="checkbox" id="checkbox5">Farmers Markets</input><br>
         </div>
+        <div class="column-5">
+          <select id="distance">
+            <option value=1>1 mile</option>
+            <option value="2">3 miles</option>
+            <option value="3">5 mile</option>
+            <option value="4">7 miles</option>
+            <option value="5">10 miles</option>
+          </select>
+        </div>
       
       <div class="column-12">
         <div style="float:right">
           <input type="checkbox" id="basemaps">Change Basemap</input><br>
           <input type="checkbox" id="showRoute">Show Route</input><br>
-          <select id="routeName" class="trailer-1">
+          <select id="routeName" class="trailer-half">
             <option value="Route 1">Route 1</option>
             <option value="Route 2">Route 2</option>
         </select>    
-        <button type="button" class="btn btn-clear" id="clearRoute">Clear Route</button>
+        <button type="button" class="btn btn-clear trailer-half" id="clearRoute">Clear Route</button>
         </div>
       </div>
     </div>
